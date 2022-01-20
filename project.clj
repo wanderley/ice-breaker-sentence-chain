@@ -9,12 +9,16 @@
   :dependencies [[org.clojure/clojure "1.10.0"]
                  [org.clojure/clojurescript "1.10.773"]
                  [org.clojure/core.async  "0.4.500"]
+                 [compojure "1.6.1"]
+                 [http-kit "2.5.3"]
                  [reagent "0.10.0"]]
 
-  :plugins [[lein-figwheel "0.5.20"]
+  :plugins [[lein-figwheel "0.5.20" :exclusions [[http-kit]]]
             [lein-cljsbuild "1.1.7" :exclusions [[org.clojure/clojure]]]]
 
-  :source-paths ["src/cljs"]
+  :source-paths ["src/clj" "src/cljs"]
+  :uberjar-name "ice-breaker-sentence-chain-standalone.jar"
+  :resource-paths ["resources"]
 
   :cljsbuild {:builds
               [{:id "dev"
@@ -55,7 +59,7 @@
              :css-dirs ["resources/public/css"] ;; watch and update CSS
 
              ;; Start an nREPL server into the running figwheel process
-             ;; :nrepl-port 7888
+             ;; nrepl-port 7888
 
              ;; Server Ring Handler (optional)
              ;; if you want to embed a ring handler into the figwheel http-kit
@@ -63,7 +67,7 @@
 
              ;; doesn't work for you just run your own server :) (see lein-ring)
 
-             ;; :ring-handler hello_world.server/handler
+             :ring-handler ice-breaker-sentence-chain.handler/app
 
              ;; To be able to open files in your editor from the heads up display
              ;; you will need to put a script on your path.
@@ -84,11 +88,12 @@
              ;; :server-logfile "tmp/logs/figwheel-logfile.log"
 
              ;; to pipe all the output to the repl
-             ;; :server-logfile false
+             :server-logfile false
              }
 
   :profiles {:dev {:dependencies [[binaryage/devtools "1.0.0"]
-                                  [figwheel-sidecar "0.5.20"]]
+                                  [figwheel-sidecar "0.5.20" :exclusions [[http-kit]]]]
+                   ;;:repl-options {:nrepl-middleware [cider.piggieback/wrap-cljs-repl]}
                    ;; need to add the compiled assets to the :clean-targets
                    :clean-targets ^{:protect false} ["resources/public/js/compiled"
                                                      :target-path]}})
