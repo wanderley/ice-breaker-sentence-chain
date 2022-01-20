@@ -1,8 +1,8 @@
 (defproject ice-breaker-sentence-chain "0.1.0-SNAPSHOT"
-  :description "FIXME: write this!"
+  :description "The goal of this ice breaker is to generate a sentence.  Each person in the group will say one word of the sentence.  Expect tons of creativity from that!"
   :url "http://example.com/FIXME"
-  :license {:name "Eclipse Public License"
-            :url "http://www.eclipse.org/legal/epl-v10.html"}
+  :license {:name "MIT License"
+            :url "https://opensource.org/licenses/MIT"}
 
   :min-lein-version "2.9.1"
 
