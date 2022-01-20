@@ -1,5 +1,5 @@
 (ns ice-breaker-sentence-chain.core
-    (:require 
+    (:require
               [reagent.core :as reagent :refer [atom]]
               [reagent.dom :as rd]))
 
