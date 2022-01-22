@@ -14,6 +14,15 @@
 
 ;;; Actions
 
+(defn login!
+  "Executes the login of a user"
+  [username]
+  (swap! app-state
+         #(-> %
+              (assoc :username username)
+              (assoc :component 'sentence-chain))))
+
+
 (defn set-connection-status! [status]
   (reset! app-state (assoc @app-state :status status)))
 
@@ -56,29 +65,47 @@
 
 ;;; Views
 
-(defn login []
-  (let [username (atom "")]
+
+
+(defn login [username]
+  (let [username (atom (or username ""))]
     (fn []
-      [:div
+      [:div {:style {:position "absolute"
+                     :top "30%"
+                     :width "100%"}}
        [:form {:on-submit (fn [_]
                             (.preventDefault _)
-                            (connect! @username))}
-        [:input {:type "text"
-                 :placeholder "What is your nickname?"
-                 :value @username
-                 :on-change #(reset! username (-> % .-target .-value))}]
-        [:button {:type "submit"} "Login"]]])))
+                            (login! @username))}
+        [:div {:style {:width "80%"
+                       :margin-left "auto"
+                       :margin-right "auto"}}
+         [:input {:type "text"
+                  :placeholder "My name is ..."
+                  :style {:width "100%"
+                          :boxSizing "border-box"
+                          :font-size "2em"
+                          :padding "0.5em"
+                          :margin-bottom "0.5em"
+                          :border-radius "10px"}
+                  :value @username
+                  :on-change #(reset! username (-> % .-target .-value))}]]
+        [:div {:style {:width "80%"
+                       :text-align "right"
+                       :margin "auto"}}
+         [:button {:type "submit"
+                   :style {:font-size "1.5em"
+                           :padding "0.5em"
+                           :background "lightgreen"
+                           :border-radius "10px"}}
+          "Let's go!"]]]])))
 
 (defn sentence-chain []
   [:div "Sentence Chain: TODO"])
 
 (defn container []
-  [:div
-   [:h1 "Ice Breaker: Sentence Chain"]
-   [:p "Connection status: " [:strong (:status @app-state)]]
-   (case (:component @app-state)
-     login          [login]
-     sentence-chain [sentence-chain])])
+  (case (:component @app-state)
+    login          [login (:username @app-state)]
+    sentence-chain [sentence-chain]))
 
 (rd/render [container]
            (. js/document (getElementById "app")))
