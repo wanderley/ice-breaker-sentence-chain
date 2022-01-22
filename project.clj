@@ -11,6 +11,8 @@
                  [org.clojure/core.async  "0.4.500"]
                  [compojure "1.6.1"]
                  [http-kit "2.5.3"]
+                 [medley "1.1.0"]
+                 [jarohen/chord "0.8.1"]
                  [reagent "0.10.0"]]
 
   :plugins [[lein-figwheel "0.5.20" :exclusions [[http-kit]]]
