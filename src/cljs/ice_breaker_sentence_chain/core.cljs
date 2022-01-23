@@ -65,8 +65,6 @@
 
 ;;; Views
 
-
-
 (defn login [username]
   (let [username (atom (or username ""))]
     (fn []
@@ -83,9 +81,9 @@
                   :placeholder "My name is ..."
                   :style {:width "100%"
                           :boxSizing "border-box"
-                          :font-size "2em"
-                          :padding "0.5em"
-                          :margin-bottom "0.5em"
+                          :font-size "2rem"
+                          :padding "0.5rem"
+                          :margin-bottom "0.5rem"
                           :border-radius "10px"}
                   :value @username
                   :on-change #(reset! username (-> % .-target .-value))}]]
@@ -93,14 +91,55 @@
                        :text-align "right"
                        :margin "auto"}}
          [:button {:type "submit"
-                   :style {:font-size "1.5em"
-                           :padding "0.5em"
+                   :style {:font-size "1.5rem"
+                           :padding "0.5rem"
                            :background "lightgreen"
                            :border-radius "10px"}}
           "Let's go!"]]]])))
 
 (defn sentence-chain []
-  [:div "Sentence Chain: TODO"])
+  [:div {:style {:width "100%"
+                 :position "absolute"
+                 :top "10%"}}
+   [:div {:style {:width "80%"
+                  :height "80%"
+                  :margin-left "auto"
+                  :margin-right "auto"}}
+    [:div {:style {:display "grid"
+                   :grid-template-columns "1fr 3fr"
+                   :grid-template-rows "1fr min-content"
+                   :grid-template-areas (pr-str "one two"
+                                                "one three")}}
+     [:div {:style {:border "1px solid gray"
+                    :border-radius "10px"
+                    :padding "0.5rem"
+                    :font-size "1.5rem"
+                    :grid-area "one"
+                    :height "20rem"}}
+      [:div "User 1"]
+      [:div "User 2"]
+      [:div "User 3"]
+      [:div "User 4"]
+      [:div "User 5"]
+      [:div "User 6"]]
+     [:div {:style {:margin-left "0.5rem"
+                    :border "1px solid gray"
+                    :grid-area "two"
+                    :height "17rem"
+                    :border-radius "10px"}}
+      [:div {:style {:padding "0.5rem"
+                     :font-size "2rem"}}
+       "Lorem Ipsum is simply dummy text of the printing and typesetting"]]
+     [:div {:style {:grid-area "three"
+                    :margin-left "0.5rem"}}
+      [:input {:type "text"
+               :placeholder "Wait your turn ..."
+               :style {:width "100%"
+                       :boxSizing "border-box"
+                       :font-size "2rem"
+                       :padding "0.5rem"
+                       :border "1px solid gray"
+                       :border-radius "10px"}}]]]]])
 
 (defn container []
   (case (:component @app-state)
