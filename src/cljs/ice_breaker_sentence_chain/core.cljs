@@ -151,8 +151,11 @@
                      :font-size "1.5rem"
                      :grid-area "one"
                      :height "20rem"}}]
-      (for [user users]
-        [:div user]))
+      (for [i (range (count users))
+            :let [user (get users i)]]
+        [:div (if (zero? i)
+                [:strong user]
+                user)]))
      [:div {:style {:margin-left "0.5rem"
                     :border "1px solid gray"
                     :grid-area "two"
