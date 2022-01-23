@@ -8,8 +8,9 @@
 
 (def ws-url "ws://localhost:3449/ws")
 
-(defonce app-state (atom {:status "offline"
-                          :component 'login}))
+
+(def initial-state {:status "offline" :component 'login})
+(defonce app-state (atom initial-state))
 
 
 ;;; Actions
@@ -20,6 +21,7 @@
   (swap! app-state
          #(-> %
               (assoc :username username)
+              (assoc :users [username])
               (assoc :component 'sentence-chain))))
 
 
@@ -97,7 +99,7 @@
                            :border-radius "10px"}}
           "Let's go!"]]]])))
 
-(defn sentence-chain []
+(defn sentence-chain [users]
   [:div {:style {:width "100%"
                  :position "absolute"
                  :top "10%"}}
@@ -110,18 +112,15 @@
                    :grid-template-rows "1fr min-content"
                    :grid-template-areas (pr-str "one two"
                                                 "one three")}}
-     [:div {:style {:border "1px solid gray"
-                    :border-radius "10px"
-                    :padding "0.5rem"
-                    :font-size "1.5rem"
-                    :grid-area "one"
-                    :height "20rem"}}
-      [:div "User 1"]
-      [:div "User 2"]
-      [:div "User 3"]
-      [:div "User 4"]
-      [:div "User 5"]
-      [:div "User 6"]]
+     (into
+      [:div {:style {:border "1px solid gray"
+                     :border-radius "10px"
+                     :padding "0.5rem"
+                     :font-size "1.5rem"
+                     :grid-area "one"
+                     :height "20rem"}}]
+      (for [user users]
+        [:div user]))
      [:div {:style {:margin-left "0.5rem"
                     :border "1px solid gray"
                     :grid-area "two"
@@ -144,7 +143,7 @@
 (defn container []
   (case (:component @app-state)
     login          [login (:username @app-state)]
-    sentence-chain [sentence-chain]))
+    sentence-chain [sentence-chain (:users @app-state)]))
 
 (rd/render [container]
            (. js/document (getElementById "app")))
