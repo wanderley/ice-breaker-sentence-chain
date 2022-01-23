@@ -15,6 +15,13 @@
 (defonce app-state (atom initial-state))
 
 
+(defn can-change-sentence? [app-state]
+  (and
+   (> (count (:users app-state)) 1)
+   (= (first (:users app-state))
+      (:username app-state))))
+
+
 ;;; Actions
 
 (defn login!
@@ -101,7 +108,7 @@
                            :border-radius "10px"}}
           "Let's go!"]]]])))
 
-(defn sentence-chain [users sentence]
+(defn sentence-chain [users sentence can-change-sentence?]
   [:div {:style {:width "100%"
                  :position "absolute"
                  :top "10%"}}
@@ -134,7 +141,10 @@
      [:div {:style {:grid-area "three"
                     :margin-left "0.5rem"}}
       [:input {:type "text"
-               :placeholder "Wait your turn ..."
+               :placeholder (if can-change-sentence?
+                              "Your turn ..."
+                              "Wait your turn ...")
+               :disabled (not can-change-sentence?)
                :style {:width "100%"
                        :boxSizing "border-box"
                        :font-size "2rem"
@@ -147,7 +157,8 @@
     login          [login (:username @app-state)]
     sentence-chain [sentence-chain
                     (:users @app-state)
-                    (:sentence @app-state)]))
+                    (:sentence @app-state)
+                    (can-change-sentence? @app-state)]))
 
 (rd/render [container]
            (. js/document (getElementById "app")))
