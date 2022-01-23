@@ -9,7 +9,9 @@
 (def ws-url "ws://localhost:3449/ws")
 
 
-(def initial-state {:status "offline" :component 'login})
+(def initial-state {:status "offline"
+                    :component 'login
+                    :sentence ""})
 (defonce app-state (atom initial-state))
 
 
@@ -99,7 +101,7 @@
                            :border-radius "10px"}}
           "Let's go!"]]]])))
 
-(defn sentence-chain [users]
+(defn sentence-chain [users sentence]
   [:div {:style {:width "100%"
                  :position "absolute"
                  :top "10%"}}
@@ -128,7 +130,7 @@
                     :border-radius "10px"}}
       [:div {:style {:padding "0.5rem"
                      :font-size "2rem"}}
-       "Lorem Ipsum is simply dummy text of the printing and typesetting"]]
+       sentence]]
      [:div {:style {:grid-area "three"
                     :margin-left "0.5rem"}}
       [:input {:type "text"
@@ -143,7 +145,9 @@
 (defn container []
   (case (:component @app-state)
     login          [login (:username @app-state)]
-    sentence-chain [sentence-chain (:users @app-state)]))
+    sentence-chain [sentence-chain
+                    (:users @app-state)
+                    (:sentence @app-state)]))
 
 (rd/render [container]
            (. js/document (getElementById "app")))
