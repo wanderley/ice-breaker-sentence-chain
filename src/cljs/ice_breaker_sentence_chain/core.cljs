@@ -33,10 +33,33 @@
               (assoc :users [username])
               (assoc :component 'sentence-chain))))
 
+(defn sync!
+  "Syncs the (whole) server state with the client state.
+
+  NOTE: In a bigger system, it would be better to have smaller updates but it
+  won't pay too much here since the state is super small."
+  [server-state]
+  (swap! app-state merge server-state))
 
 (defn set-connection-status! [status]
   (reset! app-state (assoc @app-state :status status)))
 
+
+(comment
+  ;; This code won't live long, since I am using it just to test the client-side
+  ;; behavior.  But I will leave it here to show how I was testing the UI from
+  ;; the REPL.
+
+  (reset! app-state initial-state)
+  (login! "Wanderley")
+  (sync! {:users    ["Wanderley"] :sentence ""})
+  ;; User can't type
+  (sync! {:users    ["User 1" "Wanderley"]
+                      :sentence "Lorem Ipsum is something else"})
+  ;; User can type
+  (sync! {:users    ["Wanderley" "User 1"]
+                      :sentence "Lorem Ipsum is something else"})
+  )
 
 ;;; Websocket
 
