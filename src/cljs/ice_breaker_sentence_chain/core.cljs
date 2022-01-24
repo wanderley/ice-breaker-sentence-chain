@@ -72,16 +72,16 @@
 
 (defonce outgoing-messages (async/chan))
 
-(defn send-message [message]
+(defn send-message! [message]
   (async/put! outgoing-messages message))
 
-(defn send-messages [ws-channel]
+(defn send-messages! [ws-channel]
   (async/go-loop []
     (when-let [message (async/<! outgoing-messages)]
       (async/>! ws-channel message)
       (recur))))
 
-(defn receive-messages [ws-channel]
+(defn receive-messages! [ws-channel]
   (async/go-loop []
     (let [{:keys [message]} (async/<! ws-channel)]
       (let [{:keys [type data]} message]
@@ -98,10 +98,10 @@
         (set-connection-status! "connection-error")
         (do
           (set-connection-status! "online")
-          (send-messages ws-channel)
-          (receive-messages ws-channel)
-          (send-message {:type 'login
-                         :data {:username username}}))))))
+          (send-messages! ws-channel)
+          (receive-messages! ws-channel)
+          (send-message! {:type 'login
+                          :data {:username username}}))))))
 
 (defn send-contribution!
   "Sends a contribution to the server."
