@@ -44,6 +44,11 @@
 (defn set-connection-status! [status]
   (reset! app-state (assoc @app-state :status status)))
 
+(defn set-contribution! [contribution]
+  (swap! app-state
+         #(if (can-change-sentence? %)
+            (assoc % :contribution contribution)
+            %)))
 
 (comment
   ;; This code won't live long, since I am using it just to test the client-side
@@ -55,10 +60,12 @@
   (sync! {:users    ["Wanderley"] :sentence ""})
   ;; User can't type
   (sync! {:users    ["User 1" "Wanderley"]
-                      :sentence "Lorem Ipsum is something else"})
+          :sentence "Lorem Ipsum is something else"})
+  (set-contribution! "foo")
   ;; User can type
   (sync! {:users    ["Wanderley" "User 1"]
-                      :sentence "Lorem Ipsum is something else"})
+          :sentence "Lorem Ipsum is something else"})
+  (set-contribution! "aaa")
   )
 
 ;;; Websocket
@@ -96,6 +103,11 @@
           (send-message {:type 'login
                          :data {:username username}}))))))
 
+(defn send-contribution!
+  "Sends a contribution to the server."
+  []
+  nil)
+
 
 ;;; Views
 
@@ -131,7 +143,10 @@
                            :border-radius "10px"}}
           "Let's go!"]]]])))
 
-(defn sentence-chain [users sentence can-change-sentence?]
+(defn sentence-chain [users
+                      sentence
+                      contribution
+                      can-change-sentence?]
   [:div {:style {:width "100%"
                  :position "absolute"
                  :top "10%"}}
@@ -166,17 +181,20 @@
        sentence]]
      [:div {:style {:grid-area "three"
                     :margin-left "0.5rem"}}
-      [:input {:type "text"
-               :placeholder (if can-change-sentence?
-                              "Your turn ..."
-                              "Wait your turn ...")
-               :disabled (not can-change-sentence?)
-               :style {:width "100%"
-                       :boxSizing "border-box"
-                       :font-size "2rem"
-                       :padding "0.5rem"
-                       :border "1px solid gray"
-                       :border-radius "10px"}}]]]]])
+      [:form {:on-submit send-contribution!}
+       [:input {:type "text"
+                :placeholder (if can-change-sentence?
+                               "Your turn ..."
+                               "Wait your turn ...")
+                :value (or contribution "")
+                :on-change #(set-contribution! (-> % .-target .-value))
+                :disabled (not can-change-sentence?)
+                :style {:width "100%"
+                        :boxSizing "border-box"
+                        :font-size "2rem"
+                        :padding "0.5rem"
+                        :border "1px solid gray"
+                        :border-radius "10px"}}]]]]]])
 
 (defn container []
   (case (:component @app-state)
@@ -184,6 +202,7 @@
     sentence-chain [sentence-chain
                     (:users @app-state)
                     (:sentence @app-state)
+                    (:contribution @app-state)
                     (can-change-sentence? @app-state)]))
 
 (rd/render [container]
