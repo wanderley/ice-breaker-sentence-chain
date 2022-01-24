@@ -24,9 +24,12 @@
 
 ;;; Actions
 
+(declare connect!)
+
 (defn login!
   "Executes the login of a user"
   [username]
+  (connect! username)
   (swap! app-state
          #(-> %
               (assoc :username username)
@@ -50,23 +53,6 @@
             (assoc % :contribution contribution)
             %)))
 
-(comment
-  ;; This code won't live long, since I am using it just to test the client-side
-  ;; behavior.  But I will leave it here to show how I was testing the UI from
-  ;; the REPL.
-
-  (reset! app-state initial-state)
-  (login! "Wanderley")
-  (sync! {:users    ["Wanderley"] :sentence ""})
-  ;; User can't type
-  (sync! {:users    ["User 1" "Wanderley"]
-          :sentence "Lorem Ipsum is something else"})
-  (set-contribution! "foo")
-  ;; User can type
-  (sync! {:users    ["Wanderley" "User 1"]
-          :sentence "Lorem Ipsum is something else"})
-  (set-contribution! "aaa")
-  )
 
 ;;; Websocket
 
@@ -86,7 +72,7 @@
     (let [{:keys [message]} (async/<! ws-channel)]
       (let [{:keys [type data]} message]
         (case type
-          login (swap! app-state assoc :component 'sentence-chain)))
+          state (sync! data)))
       (recur))))
 
 (defn connect!
@@ -106,7 +92,9 @@
 (defn send-contribution!
   "Sends a contribution to the server."
   []
-  nil)
+  (send-message! {:type 'contribution
+                  :data (:contribution @app-state)})
+  (set-contribution! ""))
 
 
 ;;; Views

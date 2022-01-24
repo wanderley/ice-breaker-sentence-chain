@@ -7,11 +7,45 @@
             [ring.util.response :as resp]
             [medley.core :refer [random-uuid]]))
 
+;;; State
+
+(def initial-state {:users    []
+                    :sentence "Something"})
+(defonce app-state (atom initial-state))
+
+(defn add-user! [client-id username]
+  (swap! app-state
+         #(assoc % :users
+                 (conj (:users %)
+                       [client-id username]))))
+
+(defn remove-user! [client-id]
+  (swap! app-state
+         #(assoc % :users
+                 (->> (:users %)
+                      (remove (fn [u] (= (first u) client-id)))
+                      (vec)))))
+
+(defn set-contribution! [contribution]
+  (swap! app-state
+         #(-> %
+           (assoc :sentence
+                  (str (:sentence %) " " contribution))
+           (assoc :users
+                  (let [users (:users @app-state)]
+                    (into [] (conj (vec (drop 1 users))
+                                   (first users))))))))
+
+(defn get-client-state [app-state]
+  {:users    (mapv second (:users app-state))
+   :sentence (:sentence app-state)})
+
+
+;;; Communication
+
 (defonce main-chan (async/chan))
 
 (defonce main-mult (async/mult main-chan))
-
-(defonce users (atom {}))
 
 (defn ws-handler
   [req]
@@ -31,12 +65,24 @@
                           (if message
                             (let [{:keys [type data]} message]
                               (case type
-                                login (do (swap! users assoc client-id (:username data))
-                                          (async/>! client-channel {:type 'login :data 'success})))
+                                login (async/>! main-chan
+                                                {:type 'state
+                                                 :data (->> (:username data)
+                                                            (add-user! client-id)
+                                                            (get-client-state))})
+                                contribution (async/>! main-chan
+                                                       {:type 'state
+                                                        :data (->> data
+                                                                   (set-contribution!)
+                                                                   (get-client-state))}))
                               (recur))
                             (do
-                              (swap! users dissoc client-id)
-                              (async/untap main-mult client-tap)))))))))
+                              (async/untap main-mult client-tap)
+                              (async/>! main-chan
+                                        {:type 'state
+                                         :data (-> client-id
+                                                   (remove-user!)
+                                                   (get-client-state))})))))))))
 
 (defroutes app
   (GET "/ws" [] ws-handler)
