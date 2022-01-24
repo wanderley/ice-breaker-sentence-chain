@@ -181,7 +181,9 @@
        sentence]]
      [:div {:style {:grid-area "three"
                     :margin-left "0.5rem"}}
-      [:form {:on-submit send-contribution!}
+      [:form {:on-submit (fn [_]
+                           (.preventDefault _)
+                           (send-contribution!))}
        [:input {:type "text"
                 :placeholder (if can-change-sentence?
                                "Your turn ..."
