@@ -10,7 +10,7 @@
 ;;; State
 
 (def initial-state {:users    []
-                    :sentence "Something"})
+                    :sentence ""})
 (defonce app-state (atom initial-state))
 
 (defn add-user! [client-id username]
