@@ -8,12 +8,10 @@
 
 (def ws-url "ws://localhost:3449/ws")
 
-
 (def initial-state {:status "offline"
                     :component 'login
                     :sentence ""})
 (defonce app-state (atom initial-state))
-
 
 (defn can-change-sentence? [app-state]
   (and
@@ -24,34 +22,39 @@
 
 ;;; Actions
 
-(declare connect!)
-
-(defn login!
-  "Executes the login of a user"
-  [username]
-  (connect! username)
+(defmulti  action  (fn [type app-state & params] type))
+(defmulti  effect! (fn [type app-state & params] type))
+(defmethod effect! :default [_ & _] nil)
+(defn emit [type & params]
   (swap! app-state
-         #(-> %
-              (assoc :username username)
-              (assoc :users [username])
-              (assoc :component 'sentence-chain))))
+         #(let [next-app-state (apply action (concat [type %] params))]
+            (println type params next-app-state)
+            (apply effect! (concat [type next-app-state] params))
+            next-app-state)))
 
-(defn sync!
-  "Syncs the (whole) server state with the client state.
+(declare connect! send-message!)
+(defn server-emit! [& params] (send-message! params))
 
-  NOTE: In a bigger system, it would be better to have smaller updates but it
-  won't pay too much here since the state is super small."
-  [server-state]
-  (swap! app-state merge server-state))
+(defmethod action :login [_ app-state username]
+  (merge app-state
+         {:username  username
+          :users     [username]
+          :component 'sentence-chain}))
 
-(defn set-connection-status! [status]
-  (reset! app-state (assoc @app-state :status status)))
+(defmethod effect! :login [_ app-state username]
+  (server-emit! :login username))
 
-(defn set-contribution! [contribution]
-  (swap! app-state
-         #(if (can-change-sentence? %)
-            (assoc % :contribution contribution)
-            %)))
+(defmethod action :change-contribution [_ app-state contribution]
+  (assoc app-state :contribution contribution))
+
+(defmethod action :submit-contribution [_ app-state contribution]
+  (assoc app-state :contribution ""))
+
+(defmethod effect! :submit-contribution [_ app-state contribution]
+  (server-emit! :contribution contribution))
+
+(defmethod action :sync [_ app-state server-state]
+  (merge app-state server-state))
 
 
 ;;; Websocket
@@ -70,32 +73,20 @@
 (defn receive-messages! [ws-channel]
   (async/go-loop []
     (let [{:keys [message]} (async/<! ws-channel)]
-      (let [{:keys [type data]} message]
-        (case type
-          state (sync! data)))
+      (apply emit message)
       (recur))))
 
 (defn connect!
   "Connects with the server and starts the input and output channels."
-  [username]
+  []
   (async/go
     (let [{:keys [ws-channel error]} (async/<! (ws-ch ws-url))]
       (if error
-        (set-connection-status! "connection-error")
+        (println "Connection failed with" (str error))
         (do
-          (set-connection-status! "online")
+          (println "Connected!")
           (send-messages! ws-channel)
-          (receive-messages! ws-channel)
-          (send-message! {:type 'login
-                          :data {:username username}}))))))
-
-(defn send-contribution!
-  "Sends a contribution to the server."
-  []
-  (send-message! {:type 'contribution
-                  :data (:contribution @app-state)})
-  (set-contribution! ""))
-
+          (receive-messages! ws-channel))))))
 
 ;;; Views
 
@@ -107,7 +98,7 @@
                      :width "100%"}}
        [:form {:on-submit (fn [_]
                             (.preventDefault _)
-                            (login! @username))}
+                            (emit :login @username))}
         [:div {:style {:width "80%"
                        :margin-left "auto"
                        :margin-right "auto"}}
@@ -171,13 +162,13 @@
                     :margin-left "0.5rem"}}
       [:form {:on-submit (fn [_]
                            (.preventDefault _)
-                           (send-contribution!))}
+                           (emit :submit-contribution contribution))}
        [:input {:type "text"
                 :placeholder (if can-change-sentence?
                                "Your turn ..."
                                "Wait your turn ...")
                 :value (or contribution "")
-                :on-change #(set-contribution! (-> % .-target .-value))
+                :on-change #(emit :change-contribution (-> % .-target .-value))
                 :disabled (not can-change-sentence?)
                 :style {:width "100%"
                         :boxSizing "border-box"
@@ -197,6 +188,7 @@
 
 (rd/render [container]
            (. js/document (getElementById "app")))
+(connect!)
 
 (defn on-js-reload []
   ;; optionally touch your app-state to force rerendering depending on

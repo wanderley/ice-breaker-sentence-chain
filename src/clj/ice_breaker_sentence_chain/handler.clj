@@ -13,33 +13,37 @@
                     :sentence ""})
 (defonce app-state (atom initial-state))
 
-(defn add-user! [client-id username]
-  (swap! app-state
-         #(assoc % :users
-                 (conj (:users %)
-                       [client-id username]))))
+(defmulti  action    (fn [type app-state client & params] type))
+(defmacro  defaction [type args & body] `(defmethod ~'action ~type [~'_ ~@args] (do ~@body)))
 
-(defn remove-user! [client-id]
+(defn emit [type & params]
   (swap! app-state
-         #(assoc % :users
-                 (->> (:users %)
-                      (remove (fn [u] (= (first u) client-id)))
-                      (vec)))))
+         #(let [next-app-state (apply action (concat [type %] params))]
+            next-app-state)))
 
-(defn set-contribution! [contribution]
-  (swap! app-state
-         #(-> %
-           (assoc :sentence
-                  (str (:sentence %) " " contribution))
-           (assoc :users
-                  (let [users (:users @app-state)]
-                    (into [] (conj (vec (drop 1 users))
-                                   (first users))))))))
+(defmethod action :default [_ app-state & _] app-state)
+
+(defmethod action :login [_ app-state client-id username]
+  (assoc app-state
+         :users (conj (:users app-state)
+                      [client-id username])))
+
+(defmethod action :logout [_ app-state client-id]
+  (assoc app-state :users
+         (->> (:users app-state)
+              (filterv #(not (= (first %) client-id))))))
+
+(defmethod action :contribution [_ app-state client-id contribution]
+  (-> app-state
+      (assoc :sentence (str (:sentence app-state) " " contribution))
+      (assoc :users
+             (let [users (:users app-state)]
+               (into [] (conj (vec (drop 1 users))
+                              (first users)))))))
 
 (defn get-client-state [app-state]
   {:users    (mapv second (:users app-state))
    :sentence (:sentence app-state)})
-
 
 ;;; Communication
 
@@ -63,26 +67,17 @@
                         (async/close! client-channel)))
           client-channel ([{:keys [message]}]
                           (if message
-                            (let [{:keys [type data]} message]
-                              (case type
-                                login (async/>! main-chan
-                                                {:type 'state
-                                                 :data (->> (:username data)
-                                                            (add-user! client-id)
-                                                            (get-client-state))})
-                                contribution (async/>! main-chan
-                                                       {:type 'state
-                                                        :data (->> data
-                                                                   (set-contribution!)
-                                                                   (get-client-state))}))
+                            (do
+                              (apply emit (concat [(first message) client-id]
+                                                  (rest message)))
+                              (async/>! main-chan
+                                        [:sync (get-client-state @app-state)])
                               (recur))
                             (do
+                              (emit :logout client-id)
                               (async/untap main-mult client-tap)
                               (async/>! main-chan
-                                        {:type 'state
-                                         :data (-> client-id
-                                                   (remove-user!)
-                                                   (get-client-state))})))))))))
+                                        [:sync (get-client-state @app-state)])))))))))
 
 (defroutes app
   (GET "/ws" [] ws-handler)
