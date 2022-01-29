@@ -2,7 +2,10 @@
   (:require [reagent.core :as reagent :refer [atom]]
             [reagent.dom :as rd]
             [chord.client :refer [ws-ch]]
-            [cljs.core.async :as async :include-macros true]))
+            [cljs.core.async :as async :include-macros true]
+            [ice-breaker-sentence-chain.event-handler
+             :refer [event effect]
+             :refer-macros [defevent defeffect defemit]]))
 
 (enable-console-print!)
 
@@ -19,43 +22,31 @@
    (= (first (:users app-state))
       (:username app-state))))
 
-
 ;;; Actions
 
-(defmulti  action  (fn [type app-state & params] type))
-(defmulti  effect! (fn [type app-state & params] type))
-(defmethod effect! :default [_ & _] nil)
-(defn emit [type & params]
-  (swap! app-state
-         #(let [next-app-state (apply action (concat [type %] params))]
-            (println type params next-app-state)
-            (apply effect! (concat [type next-app-state] params))
-            next-app-state)))
+(defemit app-state)
 
-(declare connect! send-message!)
-(defn server-emit! [& params] (send-message! params))
+(defevent :login [app-state username]
+  {:app-state
+   (merge app-state
+          {:username  username
+           :users     [username]
+           :component 'sentence-chain})
+   :effect
+   [:server/emit :login username]})
 
-(defmethod action :login [_ app-state username]
-  (merge app-state
-         {:username  username
-          :users     [username]
-          :component 'sentence-chain}))
+(defevent :change-contribution [app-state contribution]
+  {:app-state
+   (assoc app-state :contribution contribution)})
 
-(defmethod effect! :login [_ app-state username]
-  (server-emit! :login username))
+(defevent :submit-contribution [app-state contribution]
+  {:app-state
+   (assoc app-state :contribution "")
+   :effect
+   [:server/emit :contribution contribution]})
 
-(defmethod action :change-contribution [_ app-state contribution]
-  (assoc app-state :contribution contribution))
-
-(defmethod action :submit-contribution [_ app-state contribution]
-  (assoc app-state :contribution ""))
-
-(defmethod effect! :submit-contribution [_ app-state contribution]
-  (server-emit! :contribution contribution))
-
-(defmethod action :sync [_ app-state server-state]
-  (merge app-state server-state))
-
+(defevent :sync [app-state server-state]
+  {:app-state (merge app-state server-state)})
 
 ;;; Websocket
 
@@ -87,6 +78,9 @@
           (println "Connected!")
           (send-messages! ws-channel)
           (receive-messages! ws-channel))))))
+
+(defeffect :server/emit [& params]
+  (send-message! params))
 
 ;;; Views
 
