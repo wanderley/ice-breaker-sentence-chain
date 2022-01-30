@@ -21,7 +21,8 @@
    (= (first (:users app-state))
       (:username app-state))))
 
-;;; Actions
+
+;;; Events
 
 (defemit app-state)
 
