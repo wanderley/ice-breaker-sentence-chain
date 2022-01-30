@@ -38,4 +38,4 @@ To get a standalone verison of the application run:
 
 To execute the webserver run:
 
-    java -cp ice-breaker-sentence-chain-standalone.jar clojure.main -m ice-breaker-sentence-chain.server.main 3449
+    java -jar target/ice-breaker-sentence-chain-standalone.jar 8080

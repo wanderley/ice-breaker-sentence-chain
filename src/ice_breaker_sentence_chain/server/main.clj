@@ -5,5 +5,7 @@
 
 (defn -main
   "I don't do a whole lot ... yet."
-  [& [port]]
-  (hk/run-server h/app {:port (or (Integer. port) 8080)}))
+  [& args]
+  (let [port (if (empty? args) 8080 (or (Integer. (first args)) 8080))]
+    (println (str "Starting server on http://localhost:" port))
+    (hk/run-server h/app {:port port})))
