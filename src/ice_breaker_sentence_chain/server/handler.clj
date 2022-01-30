@@ -1,4 +1,4 @@
-(ns ice-breaker-sentence-chain.handler
+(ns ice-breaker-sentence-chain.server.handler
   (:require [org.httpkit.server :as hk]
             [chord.http-kit :refer [with-channel]]
             [compojure.core :refer :all]

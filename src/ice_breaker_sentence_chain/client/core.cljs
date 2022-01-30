@@ -1,9 +1,9 @@
-(ns ice-breaker-sentence-chain.core
+(ns ice-breaker-sentence-chain.client.core
   (:require [reagent.core :as reagent :refer [atom]]
             [reagent.dom :as rd]
             [chord.client :refer [ws-ch]]
             [cljs.core.async :as async :include-macros true]
-            [ice-breaker-sentence-chain.event-handler
+            [ice-breaker-sentence-chain.shared.event-handler
              :refer [event effect]
              :refer-macros [defevent defeffect defemit]]))
 

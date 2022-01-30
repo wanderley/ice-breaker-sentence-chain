@@ -18,25 +18,25 @@
   :plugins [[lein-figwheel "0.5.20" :exclusions [[http-kit]]]
             [lein-cljsbuild "1.1.7" :exclusions [[org.clojure/clojure]]]]
 
-  :source-paths ["src/clj" "src/cljs"]
+  :source-paths ["src"]
   :uberjar-name "ice-breaker-sentence-chain-standalone.jar"
   :resource-paths ["resources"]
 
   :cljsbuild {:builds
               [{:id "dev"
-                :source-paths ["src/cljs" "dev"]
+                :source-paths ["src" "dev"]
 
                 ;; The presence of a :figwheel configuration here
                 ;; will cause figwheel to inject the figwheel client
                 ;; into your build
-                :figwheel {:on-jsload "ice-breaker-sentence-chain.core/on-js-reload"
+                :figwheel {:on-jsload "ice-breaker-sentence-chain.client.core/on-js-reload"
                            ;; :open-urls will pop open your application
                            ;; in the default browser once Figwheel has
                            ;; started and compiled your application.
                            ;; Comment this out once it no longer serves you.
                            :open-urls ["http://localhost:3449/index.html"]}
 
-                :compiler {:main ice-breaker-sentence-chain.core
+                :compiler {:main ice-breaker-sentence-chain.client.core
                            :asset-path "js/compiled/out"
                            :output-to "resources/public/js/compiled/ice_breaker_sentence_chain.js"
                            :output-dir "resources/public/js/compiled/out"
@@ -48,9 +48,9 @@
                ;; production. You can build this with:
                ;; lein cljsbuild once min
                {:id "min"
-                :source-paths ["src/cljs"]
+                :source-paths ["src"]
                 :compiler {:output-to "resources/public/js/compiled/ice_breaker_sentence_chain.js"
-                           :main ice-breaker-sentence-chain.core
+                           :main ice-breaker-sentence-chain.client.core
                            :optimizations :advanced
                            :pretty-print false}}]}
 
@@ -69,7 +69,7 @@
 
              ;; doesn't work for you just run your own server :) (see lein-ring)
 
-             :ring-handler ice-breaker-sentence-chain.handler/app
+             :ring-handler ice-breaker-sentence-chain.server.handler/app
 
              ;; To be able to open files in your editor from the heads up display
              ;; you will need to put a script on your path.

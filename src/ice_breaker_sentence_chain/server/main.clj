@@ -1,4 +1,4 @@
-(ns ice-breaker-sentence-chain.main
+(ns ice-breaker-sentence-chain.server.main
   (:require [org.httpkit.server :as hk]
             [ice-breaker-sentence-chain.handler :as h])
   (:gen-class))

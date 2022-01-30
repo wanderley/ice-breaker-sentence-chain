@@ -1,4 +1,4 @@
-(ns ice-breaker-sentence-chain.event-handler)
+(ns ice-breaker-sentence-chain.shared.event-handler)
 
 (defmulti event    (fn [type app-state & params] type))
 (defmacro defevent [type args & body]
@@ -8,7 +8,6 @@
 (defmethod effect :default [& _] nil)
 (defmacro  defeffect [type args & body]
   `(defmethod ~'effect ~type [~'_ ~@args] (do ~@body)))
-
 
 (defmacro defemit [app-state]
   `(defn ~'emit [type# & params#]
