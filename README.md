@@ -4,6 +4,8 @@
 
 The goal of this ice breaker is to generate a sentence.  Each person in the group will say one word of the sentence.  Expect tons of creativity from that!
 
+![Demo](demo.gif)
+
 **NOTE:** Thanks to [Brian Gorman](https://briangorman.io/) for writing [Lets build a Clojurescript chatroom](https://briangorman.io/posts/chatroom-brian-gorman/) which I used to learn about how to use Websockets and manage Clojure and ClojureScript apps on the same project.
 
 ## Setup and Development
