@@ -5,41 +5,40 @@
             [compojure.route :as route]
             [clojure.core.async :as async]
             [ring.util.response :as resp]
-            [medley.core :refer [random-uuid]]))
+            [medley.core :refer [random-uuid]]
+            [ice-breaker-sentence-chain.shared.event-handler
+             :refer [event effect defevent defeffect defemit]]))
 
 ;;; State
 
 (def initial-state {:users    []
                     :sentence ""})
 (defonce app-state (atom initial-state))
+(defemit app-state)
 
-(defmulti  action    (fn [type app-state client & params] type))
-(defmacro  defaction [type args & body] `(defmethod ~'action ~type [~'_ ~@args] (do ~@body)))
+(defevent :default [app-state & _]
+  {:app-state app-state})
 
-(defn emit [type & params]
-  (swap! app-state
-         #(let [next-app-state (apply action (concat [type %] params))]
-            next-app-state)))
+(defevent :login [app-state client-id username]
+  {:app-state
+   (assoc app-state
+          :users (conj (:users app-state)
+                       [client-id username]))})
 
-(defmethod action :default [_ app-state & _] app-state)
+(defevent :logout [app-state client-id]
+  {:app-state
+   (assoc app-state :users
+          (->> (:users app-state)
+               (filterv #(not (= (first %) client-id)))))})
 
-(defmethod action :login [_ app-state client-id username]
-  (assoc app-state
-         :users (conj (:users app-state)
-                      [client-id username])))
-
-(defmethod action :logout [_ app-state client-id]
-  (assoc app-state :users
-         (->> (:users app-state)
-              (filterv #(not (= (first %) client-id))))))
-
-(defmethod action :contribution [_ app-state client-id contribution]
-  (-> app-state
-      (assoc :sentence (str (:sentence app-state) " " contribution))
-      (assoc :users
-             (let [users (:users app-state)]
-               (into [] (conj (vec (drop 1 users))
-                              (first users)))))))
+(defevent :contribution [app-state client-id contribution]
+  {:app-state
+   (-> app-state
+       (assoc :sentence (str (:sentence app-state) " " contribution))
+       (assoc :users
+              (let [users (:users app-state)]
+                (into [] (conj (vec (drop 1 users))
+                               (first users))))))})
 
 (defn get-client-state [app-state]
   {:users    (mapv second (:users app-state))
