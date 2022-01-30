@@ -5,11 +5,10 @@
             [cljs.core.async :as async :include-macros true]
             [ice-breaker-sentence-chain.shared.event-handler
              :refer [event effect]
-             :refer-macros [defevent defeffect defemit]]))
+             :refer-macros [defevent defeffect defemit]]
+            [ice-breaker-sentence-chain.client.server :refer [connect!]]))
 
 (enable-console-print!)
-
-(def ws-url "ws://localhost:3449/ws")
 
 (def initial-state {:status "offline"
                     :component 'login
@@ -48,39 +47,17 @@
 (defevent :sync [app-state server-state]
   {:app-state (merge app-state server-state)})
 
-;;; Websocket
 
+;;; Server
+
+(defonce incoming-messages (async/chan))
 (defonce outgoing-messages (async/chan))
+(defeffect :server/emit [& message] (async/put! outgoing-messages message))
+(connect! "ws://localhost:3449/ws" outgoing-messages incoming-messages)
+(async/go-loop []
+  (apply emit (async/<! incoming-messages))
+  (recur))
 
-(defn send-message! [message]
-  (async/put! outgoing-messages message))
-
-(defn send-messages! [ws-channel]
-  (async/go-loop []
-    (when-let [message (async/<! outgoing-messages)]
-      (async/>! ws-channel message)
-      (recur))))
-
-(defn receive-messages! [ws-channel]
-  (async/go-loop []
-    (let [{:keys [message]} (async/<! ws-channel)]
-      (apply emit message)
-      (recur))))
-
-(defn connect!
-  "Connects with the server and starts the input and output channels."
-  []
-  (async/go
-    (let [{:keys [ws-channel error]} (async/<! (ws-ch ws-url))]
-      (if error
-        (println "Connection failed with" (str error))
-        (do
-          (println "Connected!")
-          (send-messages! ws-channel)
-          (receive-messages! ws-channel))))))
-
-(defeffect :server/emit [& params]
-  (send-message! params))
 
 ;;; Views
 
@@ -182,7 +159,6 @@
 
 (rd/render [container]
            (. js/document (getElementById "app")))
-(connect!)
 
 (defn on-js-reload []
   ;; optionally touch your app-state to force rerendering depending on
