@@ -31,3 +31,13 @@ To create a production build run:
 
 And open your browser in `resources/public/index.html`. You will not
 get live reloading, nor a REPL.
+
+## Development and Run
+
+To get a standalone verison of the application run:
+
+    lein uberjar
+
+To execute the webserver run:
+
+    java -cp ice-breaker-sentence-chain-standalone.jar clojure.main -m ice-breaker-sentence-chain.server.main 3449

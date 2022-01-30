@@ -98,4 +98,7 @@
                    ;;:repl-options {:nrepl-middleware [cider.piggieback/wrap-cljs-repl]}
                    ;; need to add the compiled assets to the :clean-targets
                    :clean-targets ^{:protect false} ["resources/public/js/compiled"
-                                                     :target-path]}})
+                                                     :target-path]}
+             :uberjar {:prep-tasks ["compile" ["cljsbuild" "once" "min"]]
+                       :aot :all
+                       :main ice-breaker-sentence-chain.server.main}})
