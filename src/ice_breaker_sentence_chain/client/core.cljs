@@ -54,7 +54,13 @@
 (defonce incoming-messages (async/chan))
 (defonce outgoing-messages (async/chan))
 (defeffect :server/emit [& message] (async/put! outgoing-messages message))
-(connect! "ws://localhost:3449/ws" outgoing-messages incoming-messages)
+(connect! (str
+           (case (.. js/document -location -protocol)
+             "https:" "wss:"
+             "ws:")
+           "//" (.. js/document -location -host) "/ws")
+          outgoing-messages
+          incoming-messages)
 (async/go-loop []
   (apply emit (async/<! incoming-messages))
   (recur))
